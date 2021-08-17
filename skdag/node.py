@@ -206,16 +206,15 @@ class BaseNode(BaseEstimator):
 # Cell
 class InputTransformer(BaseNode):
 
-    def __init__(self, name = None, reset_cache = True):
-
-        self.reset_cache = reset_cache
+    def __init__(self, name = None):
 
         if name is None:
-            self.name = 'X__' + str(id(self))
+            self.name = str(id(self)) + '__input'
         else:
-            self.name = 'X__' + _validate_name(name)
+            self.name = _validate_name(name) + '__input'
         #input task placeholder, to access this task, fit_task and input_task aliases will be created, for consistency
-        self.__input_task = input_task_factory(self.name, X = {})
+        self.__input_task = None
+        self.__output_path = None
         return
 
 
@@ -226,6 +225,10 @@ class InputTransformer(BaseNode):
             raise NotFittedError(f'Input node {self.name} is not fitted, fit it prior to accessing its tasks')
 
         return self.__input_task
+
+    @property
+    def output_path(self,):
+        return self.__output_path
 
     @property
     def fit_task(self,):
@@ -243,35 +246,8 @@ class InputTransformer(BaseNode):
         '''does nothing'''
         return
 
-    def _make_transform_task(self, X, **kwargs):
+    def _make_transform_task(self, **kwargs):
         '''does nothing'''
-        return
-
-
-    def _reset_transform_cache_in(self,):
-        '''
-        does nothing, since theres no input to the input node,
-        method exists only for consistency
-        '''
-        return
-
-    def _reset_transform_cache_out(self,):
-        '''
-        resets output cache
-        '''
-        try:
-            self.input_task().reset(confirm = False)
-            self.__input_task = None
-        except NotFittedError:
-            pass
-
-        return
-
-    def _reset_fit_cache(self,):
-        '''
-        does nothing, since theres no state to input node,
-        method exists only for consistency
-        '''
         return
 
     def fit(self, X, **kwargs):
@@ -280,17 +256,13 @@ class InputTransformer(BaseNode):
         '''
         kwargs = {'X':X, **kwargs}
         self.__input_task = input_task_factory(self.name, **kwargs)
+        self.__output_path = self.__input_task().output().path
         return self
 
-    def transform(self, X = None, reset_cache = None, **kwargs):
+    def transform(self, X = None, **kwargs):
         self.input_task.reset(confirm = False)
         self.input_task.run()
         result = self.input_task.outputLoad()
-        if reset_cache is None:
-            #if none is passed, use defaut value from constructor
-            reset_cache = self.reset_cache
-        if reset_cache:
-            self._reset_transform_cache_out()
         return result
 
 
@@ -316,6 +288,8 @@ class NodeTransformer(BaseNode):
         self.__y_loader = None
         self.__fit_task = None
         self.__transform_task = None
+        self.__estimator_path = None
+        self.__output_path = None
         return
 
 
@@ -324,20 +298,6 @@ class NodeTransformer(BaseNode):
         sets self.__y_loader, needed during fit
         '''
         self.__y_loader = y_loader
-        return
-
-    def _reset_y_loader(self,):
-        '''
-        resets __y_loader if exists
-        '''
-        try:
-            #clean cache and set y_laoder to None
-            self.y_loader().reset(confirm = False)
-            #self.__y_loader = None
-
-        except NotFittedError:
-            pass
-
         return
 
     @property
@@ -368,6 +328,14 @@ class NodeTransformer(BaseNode):
 
         return self.__transform_task
 
+    @property
+    def output_path(self,):
+        return self.__output_path
+
+    @property
+    def estimator_path(self,):
+        return self.__estimator_path
+
     def _make_transform_task(self, transform_method = None):
         '''
         creates mangled (private) __transform_task attribute
@@ -383,24 +351,23 @@ class NodeTransformer(BaseNode):
         #create transform_task in children if needed
         input_tasks = []
         for children in self.input_nodes:
-            try:
-                input_tasks.append(children.transform_task)
-            except NotFittedError:
-                children._make_transform_task()
-                input_tasks.append(children.transform_task)
+
+            children._make_transform_task()
+            input_tasks.append(children.transform_task)
 
         #create fit_task in parent if needed
         try:
             self.__transform_task = transform_task_factory(
-                f'{transform_method}__' + self.name, self.fit_task, input_tasks, transform_method = transform_method
+                self.name + f'__{transform_method}', self.fit_task, input_tasks, transform_method = transform_method
             )
         except NotFittedError:
             self._make_fit_task()
             self.__transform_task = transform_task_factory(
-                f'{transform_method}__' + self.name, self.fit_task, input_tasks, transform_method = transform_method
+                self.name + f'__{transform_method}', self.fit_task, input_tasks, transform_method = transform_method
             )
 
 
+        self.__output_path = self.transform_task().output().path
         return
 
     def _make_fit_task(self,):
@@ -412,17 +379,11 @@ class NodeTransformer(BaseNode):
                 node._make_transform_task(node.transform_method)
 
 
-        self.__fit_task = fit_task_factory('fit__' + self.name, self.estimator, [i.transform_task for i in self.input_nodes], self.y_loader)
+        self.__fit_task = fit_task_factory(self.name + '__fit', self.estimator, [i.transform_task for i in self.input_nodes], self.y_loader)
+        self.__estimator_path = self.fit_task().output().path
         return
 
-    def _fit(self, reset_cache = True):
-
-        #reset cache of transform nodes
-        if reset_cache:
-            self._reset_transform_cache_in()
-
-        #reset fit cache (estimator state)
-        self._reset_fit_cache()
+    def _fit(self):
 
         #make fit task
         self._make_fit_task()
@@ -433,53 +394,15 @@ class NodeTransformer(BaseNode):
     def fit(self, X, y = None, **kwargs):
         raise NotImplementedError('To fit this estimator, create a DAG and call fit in this instance')
 
-    def _reset_fit_cache(self):
-        '''
-        resets cache of the output of the fit tasks, if exists
-        '''
-        try:
-            self.fit_task().reset(confirm = False)
-            self.__fit_task = None
-
-        except NotFittedError:
-            pass
-
-        return
-
-    def _reset_transform_cache_out(self):
-        '''
-        resets cache of the output of the transform tasks, if exists
-        '''
-        try:
-            self.transform_task().reset(confirm = False)
-            self.__transform_task = None
-        except NotFittedError:
-            pass
-
-        return
-
-    def _reset_transform_cache_in(self):
-        '''
-        resets cache of the input of the transform tasks, if exists
-        '''
-        for node in self.input_nodes:
-            node._reset_transform_cache_out()
-
-        return
-
-    def _infer(self, X = None, infer_method = None, reset_cache = True, **kwargs):
+    def _infer(self, X = None, infer_method = None, **kwargs):
         '''
         abstract inference interface, works for different methods, such as predict, predict proba...
         '''
         self._make_transform_task(transform_method = infer_method)
-        #reset cache
-        if reset_cache:
-            #resets input node cache
-            self._reset_transform_cache_in()
-
         #run task
         workflow = d6tflow.Workflow(self.transform_task)
         workflow.run()
+        self.__output_path = self.transform_task().output().path
         return workflow.outputLoad()
 
     def transform(self, X = None, **kwargs):

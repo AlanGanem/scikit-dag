@@ -2,8 +2,9 @@
 
 __all__ = ["index", "modules", "custom_doc_links", "git_url"]
 
-index = {"PipelineSession": "dag.ipynb",
-         "rmdir": "dag.ipynb",
+index = {"d6tflow.settings.dirpath": "dag.ipynb",
+         "PipelineSession": "dag.ipynb",
+         "remove_folder_or_file": "dag.ipynb",
          "pickle_load": "dag.ipynb",
          "pickle_dump": "dag.ipynb",
          "recursive_dict": "dag.ipynb",

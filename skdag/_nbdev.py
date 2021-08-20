@@ -4,7 +4,7 @@ __all__ = ["index", "modules", "custom_doc_links", "git_url"]
 
 index = {"d6tflow.settings.dirpath": "dag.ipynb",
          "PipelineSession": "dag.ipynb",
-         "remove_folder_or_file": "dag.ipynb",
+         "remove_folder_or_file": "utils.ipynb",
          "pickle_load": "dag.ipynb",
          "pickle_dump": "dag.ipynb",
          "recursive_dict": "dag.ipynb",
@@ -15,18 +15,14 @@ index = {"d6tflow.settings.dirpath": "dag.ipynb",
          "BaseDAG": "dag.ipynb",
          "model_to_dot": "dag.ipynb",
          "DAGEstimator": "dag.ipynb",
-         "unpack_inputs": "node.ipynb",
-         "unpack_transform_inputs": "node.ipynb",
-         "input_task_factory": "node.ipynb",
-         "fit_task_factory": "node.ipynb",
-         "transform_task_factory": "node.ipynb",
          "BaseNode": "node.ipynb",
          "InputTransformer": "node.ipynb",
          "NodeTransformer": "node.ipynb",
          "ConcatenateNode": "node.ipynb"}
 
 modules = ["dag.py",
-           "node.py"]
+           "node.py",
+           "utils.py"]
 
 doc_url = "https://{user}.github.io/skdag/"
 

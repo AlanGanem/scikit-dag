@@ -2,10 +2,7 @@
 
 __all__ = ["index", "modules", "custom_doc_links", "git_url"]
 
-index = {"d6tflow.settings.dirpath": "dag.ipynb",
-         "PipelineSession": "dag.ipynb",
-         "remove_folder_or_file": "utils.ipynb",
-         "pickle_load": "dag.ipynb",
+index = {"pickle_load": "dag.ipynb",
          "pickle_dump": "dag.ipynb",
          "recursive_dict": "dag.ipynb",
          "undefault_dict": "dag.ipynb",
@@ -16,9 +13,19 @@ index = {"d6tflow.settings.dirpath": "dag.ipynb",
          "model_to_dot": "dag.ipynb",
          "DAGEstimator": "dag.ipynb",
          "BaseNode": "node.ipynb",
-         "InputTransformer": "node.ipynb",
-         "NodeTransformer": "node.ipynb",
-         "ConcatenateNode": "node.ipynb"}
+         "BaseInputNode": "node.ipynb",
+         "Input": "node.ipynb",
+         "Target": "node.ipynb",
+         "NodeEstimator": "node.ipynb",
+         "ConcatenateNode": "node.ipynb",
+         "remove_folder_or_file": "utils.ipynb",
+         "get_pointer_names": "utils.ipynb",
+         "global_delete_from_reference": "utils.ipynb",
+         "global_set_from_reference": "utils.ipynb",
+         "global_delete_from_object": "utils.ipynb",
+         "global_set_from_object": "utils.ipynb",
+         "SimpleCacher": "utils.ipynb",
+         "EstimatorCacher": "utils.ipynb"}
 
 modules = ["dag.py",
            "node.py",
